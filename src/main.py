@@ -1,41 +1,47 @@
-from config import Config
-from telegram import Update
-from telegram.ext import CommandHandler, ContextTypes, Application, MessageHandler, filters
+import logging
+
+from telegram.ext import MessageHandler, filters, ApplicationBuilder
+
+from src.config import Config
+from src.handler import Handler, handle_text_message, error
+
+logging.getLogger("root").setLevel(logging.INFO)
+logging.getLogger("telegram").setLevel(logging.WARNING)
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
-def main():
-    print('Bot is running...')
-    config = Config()
-    TOKEN = config.get_token()
-    app = Application.builder().token(TOKEN).build()
+class Main:
 
-    # Commands
-    app.add_handler(CommandHandler('start', start_command))
-    app.add_handler(CommandHandler('help', help_command))
-    app.add_handler(CommandHandler('task', task_command))
+    def __init__(self):
 
-    # Messages
-    app.add_handler(MessageHandler(filters.TEXT, handle_message))
+        self.__config = Config()
+        self.__TOKEN: str = self.__config.get_token()
+        self.POLL_INTERVAL = self.__config.get_poll_interval()
+        self.app = ApplicationBuilder().token(self.__TOKEN).build()
 
-    # Errors
-    app.add_error_handler(error)
+        self.__init_handler()
 
-    # Polls the Telegram server for updates
-    print('Bot is polling...')
-    app.run_polling(poll_interval=1)
+    def __init_handler(self):
+        self.handler = Handler()
 
+        # Commands
+        self.app.add_handler(self.handler.start_handler)
+        self.app.add_handler(self.handler.help_handler)
+        self.app.add_handler(self.handler.task_handler)
 
-# Commands
-async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('Hello!')
+        # Messages
+        self.app.add_handler(MessageHandler(filters.TEXT, handle_text_message))
 
+        # Errors
+        self.app.add_error_handler(error)
 
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('Help!')
+    @staticmethod
+    def main():
+        logging.info('Bot is starting...')
+        main = Main()
 
-
-async def task_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('Go kiss your wife!')
+        logging.info('Bot is polling...')
+        main.app.run_polling(poll_interval=main.POLL_INTERVAL)
 
 
 # Responses
@@ -47,18 +53,5 @@ def handle_response(text: str) -> str:
     return 'I do not understand you!'
 
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text: str = update.message.text
-    print(f'User ({update.message.chat.id}) sent a message: {text}')
-
-    response: str = handle_response(text)
-    print('Bot:', response)
-    await update.message.reply_text(response)
-
-
-async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print(f'Update {update} caused error {context.error}')
-
-
 if __name__ == '__main__':
-    main()
+    Main.main()
