@@ -2,8 +2,8 @@ import logging
 
 from telegram.ext import MessageHandler, filters, ApplicationBuilder
 
-from src.config import Config
-from src.handler import Handler, handle_text_message, error
+from config import Config
+from handler import Handler, handle_text_message, error
 
 logging.getLogger("root").setLevel(logging.INFO)
 logging.getLogger("telegram").setLevel(logging.WARNING)

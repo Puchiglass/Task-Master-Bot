@@ -1,8 +1,7 @@
-# Commands
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from src.task_manager import TaskManager
+from task_manager import TaskManager
 
 
 class Command:
@@ -19,3 +18,4 @@ class Command:
 
     async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text('Help!')
+
